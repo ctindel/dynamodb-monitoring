@@ -58,8 +58,8 @@ def load_dynamodb_tables(event, context):
     for response in paginator.paginate():
         for table_name in response['TableNames']:
             #if table_name == 'dynamodb-speed-test-blog':
-            if table_name == 'bank':
-                ddb_tables[table_name] = {}
+            #if table_name == 'bank':
+            ddb_tables[table_name] = {}
 #    print(ddb_tables)
 
 def gather_dynamodb_consumption(event, context):
@@ -69,19 +69,32 @@ def gather_dynamodb_consumption(event, context):
 
     for table in ddb_tables.keys():
         response = ddb.describe_table(TableName=table)
-        #print(response)
+        print(response)
         if response['Table']['TableStatus'] != 'ACTIVE':
             return
+        
+        # Older tables that existed before the on demand feature shipped might not have this field
+        if 'BillingModeSummary' in response['Table'] and 'BillingMode' in response['Table']['BillingModeSummary']:
+            ddb_tables[table]['BillingMode'] = response['Table']['BillingModeSummary']['BillingMode']
+        else:
+            ddb_tables[table]['BillingMode'] = "PROVISIONED"
+
         ddb_tables[table]['ProvisionedThroughput'] = response['Table']['ProvisionedThroughput']
         # We don't need this field and it messes up our object->json dump
         if 'LastIncreaseDateTime' in ddb_tables[table]['ProvisionedThroughput']:
-            ddb_tables[table]['ProvisionedThroughput'].pop(LastIncreaseDateTime)
+            ddb_tables[table]['ProvisionedThroughput'].pop('LastIncreaseDateTime')
+        if 'LastDecreaseDateTime' in ddb_tables[table]['ProvisionedThroughput']:
+            ddb_tables[table]['ProvisionedThroughput'].pop('LastDecreaseDateTime')
         ddb_total_provisioned_rcu += ddb_tables[table]['ProvisionedThroughput']['ReadCapacityUnits']
         ddb_total_provisioned_wcu += ddb_tables[table]['ProvisionedThroughput']['WriteCapacityUnits']
         ddb_tables[table]['autoscaling'] = {'ReadCapacityUnits' : None, 'WriteCapacityUnits' : None}
+
+    # Since we call describe scalable targets for all tables, we need to do these in multiple loops so the 
+    #  dict structures are setup properly first
+    for table in ddb_tables.keys():
         aas_paginator = aas.get_paginator('describe_scalable_targets')
         for aas_response in aas_paginator.paginate(ServiceNamespace='dynamodb', ResourceIds=list(map(lambda table: 'table/' + table, ddb_tables.keys()))):
-            #print(aas_response)
+            print(aas_response)
             for target in aas_response['ScalableTargets']:
                 # Slice off the leading "table/" from the ResourceId
                 aas_table_name = target['ResourceId'][len("table/"):]
@@ -94,14 +107,16 @@ def gather_dynamodb_consumption(event, context):
                     ServiceNamespace='dynamodb', ResourceId=target['ResourceId'], ScalableDimension=target['ScalableDimension'])
                 #print(aas_policy_response)
                 ddb_tables[aas_table_name]['autoscaling'][aas_scalable_dimension]['target'] = aas_policy_response['ScalingPolicies'][0]['TargetTrackingScalingPolicyConfiguration']['TargetValue']
+        ddb_tables[table]['gsis'] = {}
         if 'GlobalSecondaryIndexes' in response['Table']:
-            ddb_tables[table]['gsis'] = {}
             for gsi in response['Table']['GlobalSecondaryIndexes']:
                 ddb_tables[table]['gsis'][gsi['IndexName']] = {}
                 ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput'] = gsi['ProvisionedThroughput']
                 # We don't need this field and it messes up our object->json dump
                 if 'LastIncreaseDateTime' in ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput']:
                     ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput'].pop('LastIncreaseDateTime')
+                if 'LastDecreaseDateTime' in ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput']:
+                    ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput'].pop('LastDecreaseDateTime')
                 ddb_total_provisioned_rcu += ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput']['ReadCapacityUnits']
                 ddb_total_provisioned_wcu += ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput']['WriteCapacityUnits']
                 ddb_tables[table]['gsis'][gsi['IndexName']]['autoscaling'] = {'ReadCapacityUnits' : None, 'WriteCapacityUnits' : None}
@@ -178,9 +193,9 @@ def publish_dynamodb_account_metrics(event, context):
     cloudwatch.put_metric_data(
         MetricData=[
             {
-                'MetricName': 'AccountTableLimitPct',
-                'Unit': 'Percent',
-                'Value': len(ddb_tables.keys()) / ddb_account_limits['AccountMaxTables']
+                'MetricName': 'AccountMaxReadCapacityUnits',
+                'Unit': 'None',
+                'Value': ddb_account_limits['AccountMaxReadCapacityUnits']
             }
         ],
         Namespace='AWS_DynamoDB'
@@ -189,7 +204,40 @@ def publish_dynamodb_account_metrics(event, context):
     cloudwatch.put_metric_data(
         MetricData=[
             {
-                'MetricName': 'AccountReadCapacityProvisionedPct',
+                'MetricName': 'AccountMaxWriteCapacityUnits',
+                'Unit': 'None',
+                'Value': ddb_account_limits['AccountMaxWriteCapacityUnits']
+            }
+        ],
+        Namespace='AWS_DynamoDB'
+    )
+
+    cloudwatch.put_metric_data(
+        MetricData=[
+            {
+                'MetricName': 'TableMaxReadCapacityUnits',
+                'Unit': 'None',
+                'Value': ddb_account_limits['TableMaxReadCapacityUnits']
+            }
+        ],
+        Namespace='AWS_DynamoDB'
+    )
+
+    cloudwatch.put_metric_data(
+        MetricData=[
+            {
+                'MetricName': 'TableMaxWriteCapacityUnits',
+                'Unit': 'None',
+                'Value': ddb_account_limits['TableMaxWriteCapacityUnits']
+            }
+        ],
+        Namespace='AWS_DynamoDB'
+    )
+
+    cloudwatch.put_metric_data(
+        MetricData=[
+            {
+                'MetricName': 'ProvisionedReadCapacityUnitsAccountLimit',
                 'Unit': 'Percent',
                 'Value':  ddb_total_provisioned_rcu / ddb_account_limits['AccountMaxReadCapacityUnits']
             }
@@ -200,9 +248,105 @@ def publish_dynamodb_account_metrics(event, context):
     cloudwatch.put_metric_data(
         MetricData=[
             {
-                'MetricName': 'AccountWriteCapacityProvisionedPct',
+                'MetricName': 'ProvisionedWriteCapacityUnitsAccountLimit',
                 'Unit': 'Percent',
                 'Value':  ddb_total_provisioned_wcu / ddb_account_limits['AccountMaxWriteCapacityUnits']
+            }
+        ],
+        Namespace='AWS_DynamoDB'
+    )
+
+    cloudwatch.put_metric_data(
+        MetricData=[
+            {
+                'MetricName': 'AccountTableLimitPct',
+                'Unit': 'Percent',
+                'Value': len(ddb_tables.keys()) / ddb_account_limits['AccountMaxTables']
+            }
+        ],
+        Namespace='AWS_DynamoDB'
+    )
+
+def publish_dynamodb_provisioned_table_metrics(table, event, context):
+    global ddb_tables
+    global ddb_account_limits
+
+    if ddb_tables[table]['autoscaling']['ReadCapacityUnits'] is not None:
+        cloudwatch.put_metric_data(
+            MetricData=[
+                {
+                    'MetricName': 'ProvisionedReadCapacityAutoScalingPct',
+                    'Dimensions': [{'Name': 'TableName', 'Value': table}],
+                    'Unit': 'Percent',
+                    'Value': ddb_tables[table]['ProvisionedThroughput']['ReadCapacityUnits'] / ddb_tables[table]['autoscaling']['ReadCapacityUnits']['max']
+                }
+            ],
+            Namespace='AWS_DynamoDB'
+        )
+
+    if ddb_tables[table]['autoscaling']['WriteCapacityUnits'] is not None:
+        cloudwatch.put_metric_data(
+            MetricData=[
+                {
+                    'MetricName': 'ProvisionedWriteCapacityAutoScalingPct',
+                    'Dimensions': [{'Name': 'TableName', 'Value': table}],
+                    'Unit': 'Percent',
+                    'Value': ddb_tables[table]['ProvisionedThroughput']['WriteCapacityUnits'] / ddb_tables[table]['autoscaling']['WriteCapacityUnits']['max']
+                }
+            ],
+            Namespace='AWS_DynamoDB'
+        )
+
+    for gsi in ddb_tables[table]['gsis'].keys():
+        if ddb_tables[table]['gsis'][gsi]['autoscaling']['ReadCapacityUnits'] is not None:
+            cloudwatch.put_metric_data(
+                MetricData=[
+                    {
+                        'MetricName': 'ProvisionedReadCapacityAutoScalingPct',
+                        'Dimensions': [{'Name': 'GlobalSecondaryIndexName', 'Value': gsi}, {'Name': 'TableName', 'Value': table}],
+                        'Unit': 'Percent',
+                        'Value': ddb_tables[table]['gsis'][gsi]['ProvisionedThroughput']['ReadCapacityUnits'] / ddb_tables[table]['autoscaling']['ReadCapacityUnits']['max']
+                    }
+                ],
+                Namespace='AWS_DynamoDB'
+            )
+
+        if ddb_tables[table]['gsis'][gsi]['autoscaling']['WriteCapacityUnits'] is not None:
+            cloudwatch.put_metric_data(
+                MetricData=[
+                    {
+                        'MetricName': 'ProvisionedWriteCapacityAutoScalingPct',
+                        'Dimensions': [{'Name': 'GlobalSecondaryIndexName', 'Value': gsi}, {'Name': 'TableName', 'Value': table}],
+                        'Unit': 'Percent',
+                        'Value': ddb_tables[table]['gsis'][gsi]['ProvisionedThroughput']['WriteCapacityUnits'] / ddb_tables[table]['autoscaling']['WriteCapacityUnits']['max']
+                    }
+                ],
+                Namespace='AWS_DynamoDB'
+            )
+
+def publish_dynamodb_ondemand_table_metrics(table, event, context):
+    global ddb_tables
+    global ddb_account_limits
+
+    cloudwatch.put_metric_data(
+        MetricData=[
+            {
+                'MetricName': 'ConsumedReadCapacityTableLimitPct',
+                'Dimensions': [{'Name': 'TableName', 'Value': table}],
+                'Unit': 'Percent',
+                'Value': ddb_tables[table]['ProvisionedThroughput']['ReadCapacityUnits'] / ddb_account_limits['TableMaxReadCapacityUnits']
+            }
+        ],
+        Namespace='AWS_DynamoDB'
+    )
+
+    cloudwatch.put_metric_data(
+        MetricData=[
+            {
+                'MetricName': 'ConsumedWriteCapacityTableLimitPct',
+                'Dimensions': [{'Name': 'TableName', 'Value': table}],
+                'Unit': 'Percent',
+                'Value': ddb_tables[table]['ProvisionedThroughput']['WriteCapacityUnits'] / ddb_account_limits['TableMaxWriteCapacityUnits']
             }
         ],
         Namespace='AWS_DynamoDB'
@@ -212,18 +356,13 @@ def publish_dynamodb_table_metrics(event, context):
     global ddb_tables
     global ddb_account_limits
 
-    for table in ddb_tables:
-        cloudwatch.put_metric_data(
-            MetricData=[
-                {
-                    'MetricName': 'ACCOUNT_TABLE_LIMIT_PCT',
-                    'Dimensions': [{'Name': 'TableName', 'Value': table}]
-                    'Unit': 'Percent',
-                    'Value': len(ddb_tables.keys()) / ddb_account_limits['AccountMaxTables']
-                }
-            ],
-            Namespace='AWS_DynamoDB'
-        )
+    for table in ddb_tables.keys():
+        if ddb_tables[table]['BillingMode'] == 'PROVISIONED':
+            publish_dynamodb_provisioned_table_metrics(table, event, context)
+        elif ddb_tables[table]['BillingMode'] == 'PAY_PER_REQUEST':
+            publish_dynamodb_ondemand_table_metrics(table, event, context)
+        else:
+            raise Exception(f"Unknown billing mode {ddb_tables[table]['BillingMode']} for table {table}")
 
 def publish_dynamodb_metrics(event, context):
     global ddb_tables
