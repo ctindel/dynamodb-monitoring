@@ -6,7 +6,17 @@ provider:
   name: aws
   region: ${opt:region}
   runtime: python3.7
-  endpointType: REGIONAL
+  timeout: 60 # 1 minute
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeLimits
+        - dynamodb:DescribeTable
+        - dynamodb:ListTables
+        - autoscaling:Describe*
+        - application-autoscaling:Describe*
+      Resource: "*"
+
 
 resources:
   Resources:

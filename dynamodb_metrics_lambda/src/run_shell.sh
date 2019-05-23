@@ -6,4 +6,8 @@
 
 pip install -t /tmp/src/vendored/ -r /tmp/src/requirements.txt
 
-cd /tmp/src; serverless deploy --region $AWS_DEFAULT_REGION || exit 1
+while true
+do
+    echo "Press [CTRL+C] to stop.."
+    sleep 1
+done
