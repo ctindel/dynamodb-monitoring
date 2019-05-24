@@ -16,6 +16,7 @@ DEFAULT_DYNAMODB_TABLE_LIMIT = 256
 FIVE_MINS_SECS = 300
 # We can't use AWS/DynamoDB since its reserved
 CLOUDWATCH_CUSTOM_NAMESPACE = "AWS_DynamoDB" 
+AAS_MAX_RESOURCE_ID_LENGTH = 1600
 
 # Globals
 ddb_account_limits = None
@@ -53,6 +54,8 @@ def load_dynamodb_limits(event, context):
 
 def load_dynamodb_tables(event, context):
     global ddb_tables
+    global ddb_total_provisioned_rcu
+    global ddb_total_provisioned_wcu
     
     paginator = ddb.get_paginator('list_tables')
     for response in paginator.paginate():
@@ -62,14 +65,9 @@ def load_dynamodb_tables(event, context):
             ddb_tables[table_name] = {}
 #    print(ddb_tables)
 
-def gather_dynamodb_consumption(event, context):
-    global ddb_tables
-    global ddb_total_provisioned_rcu
-    global ddb_total_provisioned_wcu
-
     for table in ddb_tables.keys():
         response = ddb.describe_table(TableName=table)
-        print(response)
+        #print(response)
         if response['Table']['TableStatus'] != 'ACTIVE':
             return
         
@@ -88,25 +86,6 @@ def gather_dynamodb_consumption(event, context):
         ddb_total_provisioned_rcu += ddb_tables[table]['ProvisionedThroughput']['ReadCapacityUnits']
         ddb_total_provisioned_wcu += ddb_tables[table]['ProvisionedThroughput']['WriteCapacityUnits']
         ddb_tables[table]['autoscaling'] = {'ReadCapacityUnits' : None, 'WriteCapacityUnits' : None}
-
-    # Since we call describe scalable targets for all tables, we need to do these in multiple loops so the 
-    #  dict structures are setup properly first
-    for table in ddb_tables.keys():
-        aas_paginator = aas.get_paginator('describe_scalable_targets')
-        for aas_response in aas_paginator.paginate(ServiceNamespace='dynamodb', ResourceIds=list(map(lambda table: 'table/' + table, ddb_tables.keys()))):
-            print(aas_response)
-            for target in aas_response['ScalableTargets']:
-                # Slice off the leading "table/" from the ResourceId
-                aas_table_name = target['ResourceId'][len("table/"):]
-                # Slice off the leading "dynamodb:table:" from the Scalable Dimension
-                aas_scalable_dimension = target['ScalableDimension'][len("dynamodb:table:"):]
-                ddb_tables[aas_table_name]['autoscaling'][aas_scalable_dimension] = {}
-                ddb_tables[aas_table_name]['autoscaling'][aas_scalable_dimension]['min'] = target['MinCapacity']
-                ddb_tables[aas_table_name]['autoscaling'][aas_scalable_dimension]['max'] = target['MaxCapacity']
-                aas_policy_response = aas.describe_scaling_policies(
-                    ServiceNamespace='dynamodb', ResourceId=target['ResourceId'], ScalableDimension=target['ScalableDimension'])
-                #print(aas_policy_response)
-                ddb_tables[aas_table_name]['autoscaling'][aas_scalable_dimension]['target'] = aas_policy_response['ScalingPolicies'][0]['TargetTrackingScalingPolicyConfiguration']['TargetValue']
         ddb_tables[table]['gsis'] = {}
         if 'GlobalSecondaryIndexes' in response['Table']:
             for gsi in response['Table']['GlobalSecondaryIndexes']:
@@ -120,21 +99,83 @@ def gather_dynamodb_consumption(event, context):
                 ddb_total_provisioned_rcu += ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput']['ReadCapacityUnits']
                 ddb_total_provisioned_wcu += ddb_tables[table]['gsis'][gsi['IndexName']]['ProvisionedThroughput']['WriteCapacityUnits']
                 ddb_tables[table]['gsis'][gsi['IndexName']]['autoscaling'] = {'ReadCapacityUnits' : None, 'WriteCapacityUnits' : None}
-                aas_paginator = aas.get_paginator('describe_scalable_targets')
-                for aas_response in aas_paginator.paginate(ServiceNamespace='dynamodb', ResourceIds=list(map(lambda index: 'table/' + table + '/index/' + index, ddb_tables[table]['gsis'].keys()))):
-                    for target in aas_response['ScalableTargets']:
-                        # Slice off the leading "table/<table>/index/" from the ResourceId
-                        aas_index_name = target['ResourceId'][len("table/" + table + "/index/"):]
-                        # Slice off the leading "dynamodb:index:" from the Scalable Dimension
-                        aas_scalable_dimension = target['ScalableDimension'][len("dynamodb:index:"):]
-                        ddb_tables[table]['gsis'][aas_index_name]['autoscaling'][aas_scalable_dimension] = {}
-                        ddb_tables[table]['gsis'][aas_index_name]['autoscaling'][aas_scalable_dimension]['min'] = target['MinCapacity']
-                        ddb_tables[table]['gsis'][aas_index_name]['autoscaling'][aas_scalable_dimension]['max'] = target['MaxCapacity']
-                        aas_policy_response = aas.describe_scaling_policies(
-                            ServiceNamespace='dynamodb', ResourceId=target['ResourceId'], ScalableDimension=target['ScalableDimension'])
-                        #print(aas_policy_response)
-                        ddb_tables[table]['gsis'][aas_index_name]['autoscaling'][aas_scalable_dimension]['target'] = aas_policy_response['ScalingPolicies'][0]['TargetTrackingScalingPolicyConfiguration']['TargetValue']
-                    print(aas_response)
+
+def gather_dynamodb_consumption(event, context):
+    global ddb_tables
+
+    #gather_table_config(event, context)
+
+    # We need a resource ID array with one entry for every table (table/<tableName>) and one entry for every GSI (table/<tableName>/index/<indexName>)
+    #  We can put up to 1600 ResourceIds in the array both for describe_scalable_targets
+    #  https://docs.aws.amazon.com/autoscaling/application/APIReference/API_DescribeScalableTargets.html
+    # To avoid throttling from the AAS service we will build arrays that have up to 1600 ResourceIds and store an array of those 
+    #  arrays which we can loop through afterwards to minimize the number of calls we make to AAS service
+    # Its possible a customer has had their number of tables account limit increased so there could be thousands of tables and thousands of GSIs
+    # As we go through the results from the DescribeScalableTargets we will build a map of resource_ids to use in calling DescribeScalingPolicies
+    dst_resource_id_arrays = []
+    tmp_dst_resource_ids = []
+
+    dsp_resource_ids = {}
+
+    for table in ddb_tables.keys():
+        tmp_dst_resource_ids.append('table/' + table)
+        if AAS_MAX_RESOURCE_ID_LENGTH == len(tmp_dst_resource_ids):
+            dst_resource_id_arrays.append(tmp_dst_resource_ids)
+            tmp_dst_resource_ids = []
+        for gsi in ddb_tables[table]['gsis'].keys():
+            tmp_dst_resource_ids.append('table/' + table + '/index/' + gsi)
+            if AAS_MAX_RESOURCE_ID_LENGTH == len(tmp_dst_resource_ids):
+                dst_resource_id_arrays.append(tmp_dst_resource_ids)
+                tmp_dst_resource_ids = []
+    if len(tmp_dst_resource_ids) > 0:
+        dst_resource_id_arrays.append(tmp_dst_resource_ids)
+
+    for dst_resource_id_array in dst_resource_id_arrays:
+        aas_paginator = aas.get_paginator('describe_scalable_targets')
+        for aas_response in aas_paginator.paginate(ServiceNamespace='dynamodb', ResourceIds=dst_resource_id_array):
+            #print(aas_response)
+            for target in aas_response['ScalableTargets']:
+                # The responses will be a mix of tables and indexes so we need to figure out which this is
+                if target['ScalableDimension'].startswith('dynamodb:table:'):
+                    # ResourceId = "table/<table>
+                    aas_table_name = target['ResourceId'].split('/')[1]
+                    # Slice off the leading "dynamodb:table:" from the Scalable Dimension
+                    aas_scalable_dimension = target['ScalableDimension'][len("dynamodb:table:"):]
+                    ddb_tables[aas_table_name]['autoscaling'][aas_scalable_dimension] = {}
+                    ddb_tables[aas_table_name]['autoscaling'][aas_scalable_dimension]['min'] = target['MinCapacity']
+                    ddb_tables[aas_table_name]['autoscaling'][aas_scalable_dimension]['max'] = target['MaxCapacity']
+                    #tmp_dsp_resources.append({'ResourceId': target['ResourceId'], 'ScalableDimension': target['ScalableDimension'], 'type': 'table'})
+                    dsp_resource_ids[target['ResourceId']] = {'type' : 'table', 'table_name' : aas_table_name}
+                elif target['ScalableDimension'].startswith('dynamodb:index:'):
+                    # Slice off the leading "table/<table>/index/" from the ResourceId
+                    # ResourceId = "table/<table>/index/<index>"
+                    aas_table_name = target['ResourceId'].split('/')[1]
+                    aas_index_name = target['ResourceId'].split('/')[3]
+                    #aas_index_name = target['ResourceId'][len("table/" + table + "/index/"):]
+                    # Slice off the leading "dynamodb:index:" from the Scalable Dimension
+                    aas_scalable_dimension = target['ScalableDimension'][len("dynamodb:index:"):]
+                    ddb_tables[aas_table_name]['gsis'][aas_index_name]['autoscaling'][aas_scalable_dimension] = {}
+                    ddb_tables[aas_table_name]['gsis'][aas_index_name]['autoscaling'][aas_scalable_dimension]['min'] = target['MinCapacity']
+                    ddb_tables[aas_table_name]['gsis'][aas_index_name]['autoscaling'][aas_scalable_dimension]['max'] = target['MaxCapacity']
+                    #tmp_dsp_resources.append({'ResourceId': target['ResourceId'], 'ScalableDimension': target['ScalableDimension'], 'type': 'index'})
+                    dsp_resource_ids[target['ResourceId']] = {'type' : 'index', 'table_name' : aas_table_name, 'index_name' : aas_index_name}
+                else:
+                    raise Exception(f"unknown ScalableDimension {target['ScalableDimension']}")
+
+    for dsp_resource_id in dsp_resource_ids.keys():
+        aas_dsp_paginator = aas.get_paginator('describe_scaling_policies')
+        for aas_policy_response in aas_dsp_paginator.paginate(ServiceNamespace='dynamodb', ResourceId=dsp_resource_id):
+            for policy in aas_policy_response['ScalingPolicies']:
+                if 'table' == dsp_resource_ids[dsp_resource_id]['type']:
+                    # Slice off the leading "dynamodb:table:" from the Scalable Dimension
+                    aas_scalable_dimension = policy['ScalableDimension'][len("dynamodb:table:"):]
+                    ddb_tables[dsp_resource_ids[dsp_resource_id]['table_name']]['autoscaling'][aas_scalable_dimension]['target'] = policy['TargetTrackingScalingPolicyConfiguration']['TargetValue']
+                elif 'index' == dsp_resource_ids[dsp_resource_id]['type']:
+                    # Slice off the leading "dynamodb:index:" from the Scalable Dimension
+                    aas_scalable_dimension = policy['ScalableDimension'][len("dynamodb:index:"):]
+                    ddb_tables[dsp_resource_ids[dsp_resource_id]['table_name']]['gsis'][dsp_resource_ids[dsp_resource_id]['index_name']]['autoscaling'][aas_scalable_dimension]['target'] = aas_policy_response['ScalingPolicies'][0]['TargetTrackingScalingPolicyConfiguration']['TargetValue']
+                else:
+                    raise Exception(f"unknown resource type {dsp_resource_id['type']}")
 
 def gather_dynamodb_metrics(event, context):
     global ddb_tables

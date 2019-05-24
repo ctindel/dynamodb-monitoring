@@ -17,7 +17,6 @@ provider:
         - application-autoscaling:Describe*
       Resource: "*"
 
-
 resources:
   Resources:
     MonitoringDynamoDbTable:
