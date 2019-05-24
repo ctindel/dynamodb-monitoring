@@ -15,7 +15,10 @@ provider:
         - dynamodb:ListTables
         - autoscaling:Describe*
         - application-autoscaling:Describe*
+        - cloudwatch:GetMetricData
+        - cloudwatch:PuttMetricData
       Resource: "*"
+
 
 resources:
   Resources:
