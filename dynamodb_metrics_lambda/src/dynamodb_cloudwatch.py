@@ -416,7 +416,7 @@ def publish_dynamodb_metrics(event, context):
     gather_dynamodb_metrics(event, context)
 
     # can't use this because sometimes timestamps show up under ProvisionedThroughput.LastIncreaseDateTime
-    print(json.dumps(ddb_tables, sort_keys=True, indent=4, separators=(',', ': ')))
+    #print(json.dumps(ddb_tables, sort_keys=True, indent=4, separators=(',', ': ')))
     #print(ddb_tables)
     print(f"Using {len(ddb_tables.keys())} of max {ddb_account_limits['AccountMaxTables']} tables")
     print(f"DynamoDB AccountMaxReadCapacityUnits: {ddb_account_limits['AccountMaxReadCapacityUnits']}")

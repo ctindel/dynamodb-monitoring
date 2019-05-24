@@ -16,7 +16,7 @@ provider:
         - autoscaling:Describe*
         - application-autoscaling:Describe*
         - cloudwatch:GetMetricData
-        - cloudwatch:PuttMetricData
+        - cloudwatch:PutMetricData
       Resource: "*"
 
 
