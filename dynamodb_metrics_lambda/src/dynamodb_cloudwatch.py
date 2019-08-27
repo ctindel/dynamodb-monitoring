@@ -234,50 +234,6 @@ def publish_dynamodb_account_metrics(event, context):
     cloudwatch.put_metric_data(
         MetricData=[
             {
-                'MetricName': 'AccountMaxReadCapacityUnits',
-                'Unit': 'None',
-                'Value': ddb_account_limits['AccountMaxReadCapacityUnits']
-            }
-        ],
-        Namespace='AWS_DynamoDB'
-    )
-
-    cloudwatch.put_metric_data(
-        MetricData=[
-            {
-                'MetricName': 'AccountMaxWriteCapacityUnits',
-                'Unit': 'None',
-                'Value': ddb_account_limits['AccountMaxWriteCapacityUnits']
-            }
-        ],
-        Namespace='AWS_DynamoDB'
-    )
-
-    cloudwatch.put_metric_data(
-        MetricData=[
-            {
-                'MetricName': 'TableMaxReadCapacityUnits',
-                'Unit': 'None',
-                'Value': ddb_account_limits['TableMaxReadCapacityUnits']
-            }
-        ],
-        Namespace='AWS_DynamoDB'
-    )
-
-    cloudwatch.put_metric_data(
-        MetricData=[
-            {
-                'MetricName': 'TableMaxWriteCapacityUnits',
-                'Unit': 'None',
-                'Value': ddb_account_limits['TableMaxWriteCapacityUnits']
-            }
-        ],
-        Namespace='AWS_DynamoDB'
-    )
-
-    cloudwatch.put_metric_data(
-        MetricData=[
-            {
                 'MetricName': 'ProvisionedReadCapacityUnitsAccountLimit',
                 'Unit': 'Percent',
                 'Value':  ddb_total_provisioned_rcu / ddb_account_limits['AccountMaxReadCapacityUnits']
