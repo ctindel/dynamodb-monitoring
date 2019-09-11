@@ -15,7 +15,7 @@ aas = boto3.client('application-autoscaling')
 DEFAULT_DYNAMODB_TABLE_LIMIT = 256
 FIVE_MINS_SECS = 300
 # We can't use AWS/DynamoDB since its reserved
-CLOUDWATCH_CUSTOM_NAMESPACE = "AWS_DynamoDB" 
+CLOUDWATCH_CUSTOM_NAMESPACE = "Custom_DynamoDB" 
 AAS_MAX_RESOURCE_ID_LENGTH = 1600
 
 # Globals
@@ -234,34 +234,12 @@ def publish_dynamodb_account_metrics(event, context):
     cloudwatch.put_metric_data(
         MetricData=[
             {
-                'MetricName': 'ProvisionedReadCapacityUnitsAccountLimit',
-                'Unit': 'Percent',
-                'Value':  ddb_total_provisioned_rcu / ddb_account_limits['AccountMaxReadCapacityUnits']
-            }
-        ],
-        Namespace='AWS_DynamoDB'
-    )
-
-    cloudwatch.put_metric_data(
-        MetricData=[
-            {
-                'MetricName': 'ProvisionedWriteCapacityUnitsAccountLimit',
-                'Unit': 'Percent',
-                'Value':  ddb_total_provisioned_wcu / ddb_account_limits['AccountMaxWriteCapacityUnits']
-            }
-        ],
-        Namespace='AWS_DynamoDB'
-    )
-
-    cloudwatch.put_metric_data(
-        MetricData=[
-            {
                 'MetricName': 'AccountTableLimitPct',
                 'Unit': 'Percent',
                 'Value': len(ddb_tables.keys()) / ddb_account_limits['AccountMaxTables']
             }
         ],
-        Namespace='AWS_DynamoDB'
+        Namespace=CLOUDWATCH_CUSTOM_NAMESPACE
     )
 
 def publish_dynamodb_provisioned_table_metrics(table, event, context):
@@ -278,7 +256,7 @@ def publish_dynamodb_provisioned_table_metrics(table, event, context):
                     'Value': ddb_tables[table]['ProvisionedThroughput']['ReadCapacityUnits'] / ddb_tables[table]['autoscaling']['ReadCapacityUnits']['max']
                 }
             ],
-            Namespace='AWS_DynamoDB'
+            Namespace=CLOUDWATCH_CUSTOM_NAMESPACE
         )
 
     if ddb_tables[table]['autoscaling']['WriteCapacityUnits'] is not None:
@@ -291,7 +269,7 @@ def publish_dynamodb_provisioned_table_metrics(table, event, context):
                     'Value': ddb_tables[table]['ProvisionedThroughput']['WriteCapacityUnits'] / ddb_tables[table]['autoscaling']['WriteCapacityUnits']['max']
                 }
             ],
-            Namespace='AWS_DynamoDB'
+            Namespace=CLOUDWATCH_CUSTOM_NAMESPACE
         )
 
     for gsi in ddb_tables[table]['gsis'].keys():
@@ -305,7 +283,7 @@ def publish_dynamodb_provisioned_table_metrics(table, event, context):
                         'Value': ddb_tables[table]['gsis'][gsi]['ProvisionedThroughput']['ReadCapacityUnits'] / ddb_tables[table]['autoscaling']['ReadCapacityUnits']['max']
                     }
                 ],
-                Namespace='AWS_DynamoDB'
+                Namespace=CLOUDWATCH_CUSTOM_NAMESPACE
             )
 
         if ddb_tables[table]['gsis'][gsi]['autoscaling']['WriteCapacityUnits'] is not None:
@@ -318,7 +296,7 @@ def publish_dynamodb_provisioned_table_metrics(table, event, context):
                         'Value': ddb_tables[table]['gsis'][gsi]['ProvisionedThroughput']['WriteCapacityUnits'] / ddb_tables[table]['autoscaling']['WriteCapacityUnits']['max']
                     }
                 ],
-                Namespace='AWS_DynamoDB'
+                Namespace=CLOUDWATCH_CUSTOM_NAMESPACE
             )
 
 def publish_dynamodb_ondemand_table_metrics(table, event, context):
@@ -334,7 +312,7 @@ def publish_dynamodb_ondemand_table_metrics(table, event, context):
                 'Value': ddb_tables[table]['ProvisionedThroughput']['ReadCapacityUnits'] / ddb_account_limits['TableMaxReadCapacityUnits']
             }
         ],
-        Namespace='AWS_DynamoDB'
+        Namespace=CLOUDWATCH_CUSTOM_NAMESPACE
     )
 
     cloudwatch.put_metric_data(
@@ -346,7 +324,7 @@ def publish_dynamodb_ondemand_table_metrics(table, event, context):
                 'Value': ddb_tables[table]['ProvisionedThroughput']['WriteCapacityUnits'] / ddb_account_limits['TableMaxWriteCapacityUnits']
             }
         ],
-        Namespace='AWS_DynamoDB'
+        Namespace=CLOUDWATCH_CUSTOM_NAMESPACE
     )
 
 def publish_dynamodb_table_metrics(event, context):
