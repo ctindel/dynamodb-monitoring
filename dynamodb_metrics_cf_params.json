@@ -1,4 +1,6 @@
 [
-    {"ParameterKey":"DynamoDBTableName","ParameterValue":"dynamodb-monitoring"},
+    {"ParameterKey":"DynamoDBProvisionedTableName","ParameterValue":"dynamodb-provisioned-monitoring"},
+    {"ParameterKey":"DynamoDBOnDemandTableName","ParameterValue":"dynamodb-ondemand-monitoring"},
+    {"ParameterKey":"DynamoDBGlobalTableName","ParameterValue":"dynamodb-gt-monitoring"},
     {"ParameterKey":"DynamoDBCustomNamespace","ParameterValue":"Custom_DynamoDB"}
 ]
