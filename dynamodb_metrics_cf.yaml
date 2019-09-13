@@ -1,0 +1,338 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Sample template for monitoring DynamoDB
+Parameters: 
+  DynamoDBTableName: 
+    Description : Database name
+    Type: String
+    MinLength: 3
+    MaxLength: 255
+    ConstraintDescription : https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html#limits-naming-rules
+  DynamoDBCustomNamespace: 
+    Description : Custom namespace used by DynamoDB Monitoring Lambda
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    ConstraintDescription : https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html
+
+Resources:
+
+  DynamoMonitoringSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: DynamoDB Monitoring SNS Topic
+      Subscription: 
+        - Endpoint: ctindel@amazon.com
+          Protocol: email
+      TopicName: dynamodb-monitoring
+
+  DynamoDBAccountReadCapAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBAccountReadCapAlarm'
+      AlarmDescription: 'Alarm when account approaches maximum read capacity limit'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: 'AWS/DynamoDB'
+      MetricName: 'AccountProvisionedReadCapacityUtilization'
+      Statistic: 'Maximum'
+      Threshold: 80
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+  DynamoDBAccountWriteCapAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBAccountWriteCapAlarm'
+      AlarmDescription: 'Alarm when account approaches maximum write capacity limit'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: 'AWS/DynamoDB'
+      MetricName: 'AccountProvisionedWriteCapacityUtilization'
+      Statistic: 'Maximum'
+      Threshold: 80
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+  DynamoDBTableReadCapAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableReadCapAlarm'
+      AlarmDescription: 'Alarm when table capacity approaches maximum account read capacity limit'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: 'AWS/DynamoDB'
+      MetricName: 'MaxProvisionedTableReadCapacityUtilization'
+      Statistic: 'Maximum'
+      Threshold: 80
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+  DynamoDBTableWriteCapAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableWriteCapAlarm'
+      AlarmDescription: 'Alarm when table capacity approaches maximum account write capacity limit'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: 'AWS/DynamoDB'
+      MetricName: 'MaxProvisionedTableWriteCapacityUtilization'
+      Statistic: 'Maximum'
+      Threshold: 80
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+  DynamoDBAccountTableLimitAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBAccountTableLimitAlarm'
+      AlarmDescription: 'Alarm when account approaches total limit of number of DynamoDB Tables'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: !Ref DynamoDBCustomNamespace
+      MetricName: 'AccountTableLimitPct'
+      Statistic: 'Maximum'
+      Unit: 'Percent'
+      Threshold: 80
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+  DynamoDBTableReadThrottlingAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableReadThrottlingAlarm'
+      AlarmDescription: 'Alarm when table read throttle requests exceed 2% of total number of read requests'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Metrics:
+        - Id: 'e1'
+          Expression: 'm1/m2'
+          Label: TableReadThrottlesOverTotalReads
+        - Id: 'm1'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ReadThrottleEvents'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+        - Id: 'm2'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ConsumedReadCapacityUnits'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+      EvaluationPeriods: 1
+      Threshold: 2.0
+      ComparisonOperator: 'GreaterThanThreshold'
+  DynamoDBTableWriteThrottlingAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableWriteThrottlingAlarm'
+      AlarmDescription: 'Alarm when table write throttle requests exceed 2% of total number of write requests'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Metrics:
+        - Id: 'e1'
+          Expression: 'm1/m2'
+          Label: TableWriteThrottlesOverTotalWrites
+        - Id: 'm1'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'WriteThrottleEvents'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+        - Id: 'm2'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ConsumedWriteCapacityUnits'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+      EvaluationPeriods: 1
+      Threshold: 2.0
+      ComparisonOperator: 'GreaterThanThreshold'
+  DynamoDBTableSystemErrorAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableSystemErrorAlarm'
+      AlarmDescription: 'Alarm when system errors exceed 2% of total number of requests'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Metrics:
+        - Id: 'e1'
+          Expression: 'm1/(m2+m3)'
+          Label: SystemErrorsOverTotalRequests
+        - Id: 'm1'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'SystemErrors'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+        - Id: 'm2'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ConsumedReadCapacityUnits'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+        - Id: 'm3'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ConsumedWriteCapacityUnits'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+      EvaluationPeriods: 1
+      Threshold: 2.0
+      ComparisonOperator: 'GreaterThanThreshold'
+  DynamoDBTableUserErrorAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableUserErrorAlarm'
+      AlarmDescription: 'Alarm when user errors exceed 2% of total number of requests'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Metrics:
+        - Id: 'e1'
+          Expression: 'm1/(m2+m3)'
+          Label: UserErrorsOverTotalRequests
+        - Id: 'm1'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'UserErrors'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+        - Id: 'm2'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ConsumedReadCapacityUnits'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+        - Id: 'm3'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ConsumedWriteCapacityUnits'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBTableName
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+      EvaluationPeriods: 1
+      Threshold: 2.0
+      ComparisonOperator: 'GreaterThanThreshold'
+  DynamoDBTableConditionCheckAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableConditionCheckWritelarm'
+      AlarmDescription: 'Alarm when condition check errors are too high'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: 'AWS/DynamoDB'
+      MetricName: 'ConditionalCheckFailedRequests'
+      Statistic: 'Sum'
+      Threshold: 100
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+  DynamoDBTableTransactionConflictAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableTransactionConflictAlarm'
+      AlarmDescription: 'Alarm when transaction conflict errors are too high'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: 'AWS/DynamoDB'
+      MetricName: 'TransactionConflict'
+      Statistic: 'Sum'
+      Threshold: 100
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+  DynamoDBTableASReadAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableASReadAlarm'
+      AlarmDescription: 'Alarm when table auto scaling read setting approaches table AS maximum'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: !Ref DynamoDBCustomNamespace
+      MetricName: 'ProvisionedReadCapacityAutoScalingPct'
+      Dimensions:
+        - Name: 'TableName'
+          Value: !Ref DynamoDBTableName
+      Statistic: 'Maximum'
+      Unit: 'Percent'
+      Threshold: 90
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+  DynamoDBTableASWriteAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBTableASWriteAlarm'
+      AlarmDescription: 'Alarm when table auto scaling write setting approaches table AS maximum'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: !Ref DynamoDBCustomNamespace
+      MetricName: 'ProvisionedWriteCapacityAutoScalingPct'
+      Dimensions:
+        - Name: 'TableName'
+          Value: !Ref DynamoDBTableName
+      Statistic: 'Maximum'
+      Unit: 'Percent'
+      Threshold: 90
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2

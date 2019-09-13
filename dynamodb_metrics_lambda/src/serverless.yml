@@ -19,7 +19,6 @@ provider:
         - cloudwatch:PutMetricData
       Resource: "*"
 
-
 resources:
   Resources:
     MonitoringDynamoDbTable:

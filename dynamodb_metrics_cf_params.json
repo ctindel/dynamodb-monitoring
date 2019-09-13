@@ -1,0 +1,4 @@
+[
+    {"ParameterKey":"DynamoDBTableName","ParameterValue":"dynamodb-monitoring"},
+    {"ParameterKey":"DynamoDBCustomNamespace","ParameterValue":"Custom_DynamoDB"}
+]
