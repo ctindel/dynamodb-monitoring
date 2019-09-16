@@ -19,6 +19,18 @@ Parameters:
     MinLength: 3
     MaxLength: 255
     ConstraintDescription : https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html#limits-naming-rules
+  DynamoDBGlobalTableReceivingRegion: 
+    Description: Replica Region for Global Table referred to by DynamoDBGlobalTableName
+    Type: String
+    MinLength: 3
+    MaxLength: 255
+    ConstraintDescription : https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html
+  DynamoDBStreamLambdaFunctionName: 
+    Description: DynamoDB Stream Lambda Function Name
+    Type: String
+    MinLength: 1
+    MaxLength: 140
+    ConstraintDescription : https://docs.aws.amazon.com/lambda/latest/dg/API_CreateFunction.html
   DynamoDBCustomNamespace: 
     Description : Custom namespace used by DynamoDB Monitoring Lambda
     Type: String
@@ -683,7 +695,7 @@ Resources:
       Period: 60
       EvaluationPeriods: 2
 
-# Alarms for OnDemand Tables (Section 5)
+# Alarms for OnDemand Tables
   DynamoDBOnDemandTableReadLimitAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -753,3 +765,119 @@ Resources:
       EvaluationPeriods: 2
       Threshold: 90
       ComparisonOperator: 'GreaterThanThreshold'
+
+  DynamoDBOnDemandGSIReadLimitAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBOnDemandGSIReadLimitAlarm'
+      AlarmDescription: 'Alarm when consumed GSI reads approach the account limit'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Metrics:
+        - Id: 'e1'
+          Expression: 'm1/m2'
+          Label: GSIReadsOverMaxReadLimit
+        - Id: 'm1'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ConsumedReadCapacityUnits'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBOnDemandTableName
+                - Name: 'GlobalSecondaryIndexName'
+                  Value: !Join [ '-', [!Ref DynamoDBOnDemandTableName, 'gsi1'] ]
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+        - Id: 'm2'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'AccountMaxTableLevelReads'
+            Period: 300 
+            Stat: 'Maximum'
+          ReturnData: False
+      EvaluationPeriods: 2
+      Threshold: 90
+      ComparisonOperator: 'GreaterThanThreshold'
+
+  DynamoDBOnDemandGSIWriteLimitAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBOnDemandGSIWriteLimitAlarm'
+      AlarmDescription: 'Alarm when consumed GSI reads approach the account limit'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Metrics:
+        - Id: 'e1'
+          Expression: 'm1/m2'
+          Label: GSIWritesOverMaxWriteLimit
+        - Id: 'm1'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'ConsumedWriteCapacityUnits'
+              Dimensions:
+                - Name: 'TableName'
+                  Value: !Ref DynamoDBOnDemandTableName
+                - Name: 'GlobalSecondaryIndexName'
+                  Value: !Join [ '-', [!Ref DynamoDBOnDemandTableName, 'gsi1'] ]
+            Period: 300 
+            Stat: 'SampleCount'
+            Unit: 'Count'
+          ReturnData: False
+        - Id: 'm2'
+          MetricStat:
+            Metric:
+              Namespace: 'AWS/DynamoDB'
+              MetricName: 'AccountMaxTableLevelWrites'
+            Period: 300 
+            Stat: 'Maximum'
+          ReturnData: False
+      EvaluationPeriods: 2
+      Threshold: 90
+      ComparisonOperator: 'GreaterThanThreshold'
+
+# Alarms for Global Tables
+  DynamoDBGTReplLatencyAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoDBGTReplLatencyAlarm'
+      AlarmDescription: 'Alarm when global table replication latency exceeds 10 minutes (600k ms)'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: 'AWS/DynamoDB'
+      MetricName: 'ReplicationLatency'
+      Dimensions:
+        - Name: 'TableName'
+          Value: !Ref DynamoDBGlobalTableName
+        - Name: 'ReceivingRegion'
+          Value: !Ref DynamoDBGlobalTableReceivingRegion
+      Statistic: 'Average'
+      Threshold: 600000
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
+
+# Alarms for Lambda Functions
+  DynamoStreamLambdaIteratorAgeAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: 'DynamoStreamLambdaIteratorAgeAlarm'
+      AlarmDescription: 'Alarm when lambda iterator age exceeds 30 seconds (30k ms)'
+      AlarmActions:
+        - !Ref DynamoMonitoringSNSTopic
+      Namespace: 'AWS/Lambda'
+      MetricName: 'IteratorAge'
+      Dimensions:
+        - Name: 'Function'
+          Value: !Ref DynamoDBStreamLambdaFunctionName
+        - Name: 'Resource'
+          Value: !Ref DynamoDBStreamLambdaFunctionName
+      Statistic: 'Average'
+      Threshold: 30000
+      ComparisonOperator: 'GreaterThanThreshold'
+      Period: 60
+      EvaluationPeriods: 2
