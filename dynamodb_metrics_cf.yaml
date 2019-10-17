@@ -267,7 +267,7 @@ Resources:
         - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: 'm1/m2'
+          Expression: '(m1/m2)*100'
           Label: TableReadThrottlesOverTotalReads
         - Id: 'm1'
           MetricStat:
@@ -305,7 +305,7 @@ Resources:
         - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: 'm1/m2'
+          Expression: '(m1/m2)*100'
           Label: GSIReadThrottlesOverTotalReads
         - Id: 'm1'
           MetricStat:
@@ -347,7 +347,7 @@ Resources:
         - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: 'm1/m2'
+          Expression: '(m1/m2)*100'
           Label: TableWriteThrottlesOverTotalWrites
         - Id: 'm1'
           MetricStat:
@@ -385,7 +385,7 @@ Resources:
         - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: 'm1/m2'
+          Expression: '(m1/m2)*100'
           Label: GSIWriteThrottlesOverTotalWrites
         - Id: 'm1'
           MetricStat:
