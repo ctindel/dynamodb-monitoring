@@ -40,7 +40,7 @@ Parameters:
 
 Resources:
 
-  DynamoMonitoringSNSTopic:
+  DynamoDBMonitoringSNSTopic:
     Type: AWS::SNS::Topic
     Properties: 
       DisplayName: DynamoDB Monitoring SNS Topic
@@ -193,7 +193,7 @@ Resources:
       AlarmName: 'DynamoDBAccountReadCapAlarm'
       AlarmDescription: 'Alarm when account approaches maximum read capacity limit'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/DynamoDB'
       MetricName: 'AccountProvisionedReadCapacityUtilization'
       Statistic: 'Maximum'
@@ -207,7 +207,7 @@ Resources:
       AlarmName: 'DynamoDBAccountWriteCapAlarm'
       AlarmDescription: 'Alarm when account approaches maximum write capacity limit'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/DynamoDB'
       MetricName: 'AccountProvisionedWriteCapacityUtilization'
       Statistic: 'Maximum'
@@ -221,7 +221,7 @@ Resources:
       AlarmName: 'DynamoDBTableReadCapAlarm'
       AlarmDescription: 'Alarm when table capacity approaches maximum account read capacity limit'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/DynamoDB'
       MetricName: 'MaxProvisionedTableReadCapacityUtilization'
       Statistic: 'Maximum'
@@ -235,7 +235,7 @@ Resources:
       AlarmName: 'DynamoDBTableWriteCapAlarm'
       AlarmDescription: 'Alarm when table capacity approaches maximum account write capacity limit'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/DynamoDB'
       MetricName: 'MaxProvisionedTableWriteCapacityUtilization'
       Statistic: 'Maximum'
@@ -249,7 +249,7 @@ Resources:
       AlarmName: 'DynamoDBAccountTableLimitAlarm'
       AlarmDescription: 'Alarm when account approaches total limit of number of DynamoDB Tables'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: !Ref DynamoDBCustomNamespace
       MetricName: 'AccountTableLimitPct'
       Statistic: 'Maximum'
@@ -264,7 +264,7 @@ Resources:
       AlarmName: 'DynamoDBTableReadThrottlingAlarm'
       AlarmDescription: 'Alarm when table read throttle requests exceed 2% of total number of read requests'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
           Expression: 'm1/m2'
@@ -302,7 +302,7 @@ Resources:
       AlarmName: 'DynamoDBGSIReadThrottlingAlarm'
       AlarmDescription: 'Alarm when GSI read throttle requests exceed 2% of total number of read requests'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
           Expression: 'm1/m2'
@@ -344,7 +344,7 @@ Resources:
       AlarmName: 'DynamoDBTableWriteThrottlingAlarm'
       AlarmDescription: 'Alarm when table write throttle requests exceed 2% of total number of write requests'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
           Expression: 'm1/m2'
@@ -382,7 +382,7 @@ Resources:
       AlarmName: 'DynamoDBGSIWriteThrottlingAlarm'
       AlarmDescription: 'Alarm when GSI write throttle requests exceed 2% of total number of write requests'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
           Expression: 'm1/m2'
@@ -424,7 +424,7 @@ Resources:
       AlarmName: 'DynamoDBTableSystemErrorAlarm'
       AlarmDescription: 'Alarm when system errors exceed 2% of total number of requests'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
           Expression: 'm1/(m2+m3)'
@@ -474,7 +474,7 @@ Resources:
       AlarmName: 'DynamoDBGSISystemErrorAlarm'
       AlarmDescription: 'Alarm when GSI system errors exceed 2% of total number of requests'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
           Expression: 'm1/(m2+m3)'
@@ -530,7 +530,7 @@ Resources:
       AlarmName: 'DynamoDBTableUserErrorAlarm'
       AlarmDescription: 'Alarm when user errors exceed 2% of total number of requests'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
           Expression: 'm1/(m2+m3)'
@@ -580,7 +580,7 @@ Resources:
       AlarmName: 'DynamoDBGSIUserErrorAlarm'
       AlarmDescription: 'Alarm when GSI user errors exceed 2% of total number of requests'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
           Expression: 'm1/(m2+m3)'
@@ -636,7 +636,7 @@ Resources:
       AlarmName: 'DynamoDBTableConditionCheckWritelarm'
       AlarmDescription: 'Alarm when condition check errors are too high'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/DynamoDB'
       MetricName: 'ConditionalCheckFailedRequests'
       Statistic: 'Sum'
@@ -650,7 +650,7 @@ Resources:
       AlarmName: 'DynamoDBTableTransactionConflictAlarm'
       AlarmDescription: 'Alarm when transaction conflict errors are too high'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/DynamoDB'
       MetricName: 'TransactionConflict'
       Statistic: 'Sum'
@@ -664,7 +664,7 @@ Resources:
       AlarmName: 'DynamoDBTableASReadAlarm'
       AlarmDescription: 'Alarm when table auto scaling read setting approaches table AS maximum'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: !Ref DynamoDBCustomNamespace
       MetricName: 'ProvisionedReadCapacityAutoScalingPct'
       Dimensions:
@@ -682,7 +682,7 @@ Resources:
       AlarmName: 'DynamoDBTableASWriteAlarm'
       AlarmDescription: 'Alarm when table auto scaling write setting approaches table AS maximum'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: !Ref DynamoDBCustomNamespace
       MetricName: 'ProvisionedWriteCapacityAutoScalingPct'
       Dimensions:
@@ -702,10 +702,10 @@ Resources:
       AlarmName: 'DynamoDBOnDemandTableReadLimitAlarm'
       AlarmDescription: 'Alarm when consumed table reads approach the account limit'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: 'm1/m2'
+          Expression: '((m1 / 300) / m2) * 100)'
           Label: TableReadsOverMaxReadLimit
         - Id: 'm1'
           MetricStat:
@@ -737,10 +737,10 @@ Resources:
       AlarmName: 'DynamoDBOnDemandTableWriteLimitAlarm'
       AlarmDescription: 'Alarm when consumed table reads approach the account limit'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: 'm1/m2'
+          Expression: '((m1 / 300) / m2) * 100)'
           Label: TableWritesOverMaxWriteLimit
         - Id: 'm1'
           MetricStat:
@@ -772,10 +772,10 @@ Resources:
       AlarmName: 'DynamoDBOnDemandGSIReadLimitAlarm'
       AlarmDescription: 'Alarm when consumed GSI reads approach the account limit'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: 'm1/m2'
+          Expression: '((m1 / 300) / m2) * 100)'
           Label: GSIReadsOverMaxReadLimit
         - Id: 'm1'
           MetricStat:
@@ -809,10 +809,10 @@ Resources:
       AlarmName: 'DynamoDBOnDemandGSIWriteLimitAlarm'
       AlarmDescription: 'Alarm when consumed GSI reads approach the account limit'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: 'm1/m2'
+          Expression: '((m1 / 300) / m2) * 100)'
           Label: GSIWritesOverMaxWriteLimit
         - Id: 'm1'
           MetricStat:
@@ -847,7 +847,7 @@ Resources:
       AlarmName: 'DynamoDBGTReplLatencyAlarm'
       AlarmDescription: 'Alarm when global table replication latency exceeds 10 minutes (600k ms)'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/DynamoDB'
       MetricName: 'ReplicationLatency'
       Dimensions:
@@ -868,7 +868,7 @@ Resources:
       AlarmName: 'DynamoStreamLambdaIteratorAgeAlarm'
       AlarmDescription: 'Alarm when lambda iterator age exceeds 30 seconds (30k ms)'
       AlarmActions:
-        - !Ref DynamoMonitoringSNSTopic
+        - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/Lambda'
       MetricName: 'IteratorAge'
       Dimensions:
