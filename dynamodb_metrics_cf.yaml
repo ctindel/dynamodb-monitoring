@@ -199,7 +199,7 @@ Resources:
       Statistic: 'Maximum'
       Threshold: 80
       ComparisonOperator: 'GreaterThanThreshold'
-      Period: 60
+      Period: 300
       EvaluationPeriods: 2
   DynamoDBAccountWriteCapAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -213,7 +213,7 @@ Resources:
       Statistic: 'Maximum'
       Threshold: 80
       ComparisonOperator: 'GreaterThanThreshold'
-      Period: 60
+      Period: 300
       EvaluationPeriods: 2
   DynamoDBTableReadCapAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -227,7 +227,7 @@ Resources:
       Statistic: 'Maximum'
       Threshold: 80
       ComparisonOperator: 'GreaterThanThreshold'
-      Period: 60
+      Period: 300
       EvaluationPeriods: 2
   DynamoDBTableWriteCapAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -241,7 +241,7 @@ Resources:
       Statistic: 'Maximum'
       Threshold: 80
       ComparisonOperator: 'GreaterThanThreshold'
-      Period: 60
+      Period: 300
       EvaluationPeriods: 2
   DynamoDBAccountTableLimitAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -845,7 +845,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmName: 'DynamoDBGTReplLatencyAlarm'
-      AlarmDescription: 'Alarm when global table replication latency exceeds 10 minutes (600k ms)'
+      AlarmDescription: 'Alarm when global table replication latency exceeds 3 minutes (180k ms)'
       AlarmActions:
         - !Ref DynamoDBMonitoringSNSTopic
       Namespace: 'AWS/DynamoDB'
@@ -856,9 +856,9 @@ Resources:
         - Name: 'ReceivingRegion'
           Value: !Ref DynamoDBGlobalTableReceivingRegion
       Statistic: 'Average'
-      Threshold: 600000
+      Threshold: 180000
       ComparisonOperator: 'GreaterThanThreshold'
-      Period: 60
+      Period: 300
       EvaluationPeriods: 2
 
 # Alarms for Lambda Functions
