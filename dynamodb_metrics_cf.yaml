@@ -858,7 +858,7 @@ Resources:
       Statistic: 'Average'
       Threshold: 180000
       ComparisonOperator: 'GreaterThanThreshold'
-      Period: 300
+      Period: 60
       EvaluationPeriods: 2
 
 # Alarms for Lambda Functions
