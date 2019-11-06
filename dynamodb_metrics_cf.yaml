@@ -705,7 +705,7 @@ Resources:
         - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: '((m1 / 300) / m2) * 100)'
+          Expression: '(((m1 / 300) / m2) * 100)'
           Label: TableReadsOverMaxReadLimit
         - Id: 'm1'
           MetricStat:
@@ -740,7 +740,7 @@ Resources:
         - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: '((m1 / 300) / m2) * 100)'
+          Expression: '(((m1 / 300) / m2) * 100)'
           Label: TableWritesOverMaxWriteLimit
         - Id: 'm1'
           MetricStat:
@@ -775,7 +775,7 @@ Resources:
         - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: '((m1 / 300) / m2) * 100)'
+          Expression: '(((m1 / 300) / m2) * 100)'
           Label: GSIReadsOverMaxReadLimit
         - Id: 'm1'
           MetricStat:
@@ -812,7 +812,7 @@ Resources:
         - !Ref DynamoDBMonitoringSNSTopic
       Metrics:
         - Id: 'e1'
-          Expression: '((m1 / 300) / m2) * 100)'
+          Expression: '(((m1 / 300) / m2) * 100)'
           Label: GSIWritesOverMaxWriteLimit
         - Id: 'm1'
           MetricStat:
