@@ -197,10 +197,11 @@ Resources:
       Namespace: 'AWS/DynamoDB'
       MetricName: 'AccountProvisionedReadCapacityUtilization'
       Statistic: 'Maximum'
+      Unit: 'Percent'
       Threshold: 80
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 300
-      EvaluationPeriods: 2
+      EvaluationPeriods: 1
   DynamoDBAccountWriteCapAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -211,10 +212,11 @@ Resources:
       Namespace: 'AWS/DynamoDB'
       MetricName: 'AccountProvisionedWriteCapacityUtilization'
       Statistic: 'Maximum'
+      Unit: 'Percent'
       Threshold: 80
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 300
-      EvaluationPeriods: 2
+      EvaluationPeriods: 1
   DynamoDBTableReadCapAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -225,10 +227,11 @@ Resources:
       Namespace: 'AWS/DynamoDB'
       MetricName: 'MaxProvisionedTableReadCapacityUtilization'
       Statistic: 'Maximum'
+      Unit: 'Percent'
       Threshold: 80
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 300
-      EvaluationPeriods: 2
+      EvaluationPeriods: 1
   DynamoDBTableWriteCapAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -239,10 +242,11 @@ Resources:
       Namespace: 'AWS/DynamoDB'
       MetricName: 'MaxProvisionedTableWriteCapacityUtilization'
       Statistic: 'Maximum'
+      Unit: 'Percent'
       Threshold: 80
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 300
-      EvaluationPeriods: 2
+      EvaluationPeriods: 1
   DynamoDBAccountTableLimitAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -277,7 +281,7 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -289,11 +293,11 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       Threshold: 2.0
       ComparisonOperator: 'GreaterThanThreshold'
   DynamoDBGSIReadThrottlingAlarm:
@@ -317,7 +321,7 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -331,11 +335,11 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       Threshold: 2.0
       ComparisonOperator: 'GreaterThanThreshold'
   DynamoDBTableWriteThrottlingAlarm:
@@ -357,7 +361,7 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -369,11 +373,11 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       Threshold: 2.0
       ComparisonOperator: 'GreaterThanThreshold'
   DynamoDBGSIWriteThrottlingAlarm:
@@ -397,7 +401,7 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -411,11 +415,11 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       Threshold: 2.0
       ComparisonOperator: 'GreaterThanThreshold'
   DynamoDBTableSystemErrorAlarm:
@@ -437,7 +441,7 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -449,7 +453,7 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -461,11 +465,11 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
-      EvaluationPeriods: 1
+      EvaluationPeriods: 20
       Threshold: 2.0
       ComparisonOperator: 'GreaterThanThreshold'
   DynamoDBGSISystemErrorAlarm:
@@ -489,7 +493,7 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -503,7 +507,7 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -517,11 +521,11 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
-      EvaluationPeriods: 1
+      EvaluationPeriods: 20
       Threshold: 2.0
       ComparisonOperator: 'GreaterThanThreshold'
   DynamoDBTableUserErrorAlarm:
@@ -543,7 +547,7 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -555,7 +559,7 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -567,11 +571,11 @@ Resources:
               Dimensions:
                 - Name: 'TableName'
                   Value: !Ref DynamoDBProvisionedTableName
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       Threshold: 2.0
       ComparisonOperator: 'GreaterThanThreshold'
   DynamoDBGSIUserErrorAlarm:
@@ -595,7 +599,7 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -609,7 +613,7 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
@@ -623,11 +627,11 @@ Resources:
                   Value: !Ref DynamoDBProvisionedTableName
                 - Name: 'GlobalSecondaryIndexName'
                   Value: !Join [ '-', [!Ref DynamoDBProvisionedTableName, 'gsi1'] ]
-            Period: 300 
+            Period: 60 
             Stat: 'SampleCount'
             Unit: 'Count'
           ReturnData: False
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       Threshold: 2.0
       ComparisonOperator: 'GreaterThanThreshold'
   DynamoDBTableConditionCheckAlarm:
@@ -640,6 +644,7 @@ Resources:
       Namespace: 'AWS/DynamoDB'
       MetricName: 'ConditionalCheckFailedRequests'
       Statistic: 'Sum'
+      Unit: 'Count'
       Threshold: 100
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 60
@@ -654,6 +659,7 @@ Resources:
       Namespace: 'AWS/DynamoDB'
       MetricName: 'TransactionConflict'
       Statistic: 'Sum'
+      Unit: 'Count'
       Threshold: 100
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 60
@@ -880,4 +886,4 @@ Resources:
       Threshold: 30000
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 60
-      EvaluationPeriods: 2
+      EvaluationPeriods: 15
