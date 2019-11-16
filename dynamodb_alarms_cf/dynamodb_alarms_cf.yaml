@@ -37,6 +37,12 @@ Parameters:
     MinLength: 1
     MaxLength: 255
     ConstraintDescription : https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html
+  DynamoDBSNSEmail: 
+    Description : Email Address subscribed to newly created SNS Topic
+    Type: String
+    AllowedPattern: "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+    MinLength: 1
+    MaxLength: 255
 
 Resources:
 

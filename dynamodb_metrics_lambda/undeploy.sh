@@ -5,4 +5,4 @@
 : "${AWS_SECRET_ACCESS_KEY:?Need to set AWS_SECRET_ACCESS_KEY non-empty}"
 : "${AWS_DEFAULT_REGION:?Need to set AWS_DEFAULT_REGION non-empty}"
 
-cd /tmp/src; serverless remove --region $AWS_DEFAULT_REGION || exit 1
+cd /tmp/src/dynamodb_metrics_lambda; serverless remove --region $AWS_DEFAULT_REGION || exit 1
