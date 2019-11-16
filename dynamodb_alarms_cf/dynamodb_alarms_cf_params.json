@@ -1,8 +1,0 @@
-[
-    {"ParameterKey":"DynamoDBProvisionedTableName","ParameterValue":"dynamodb-provisioned-monitoring"},
-    {"ParameterKey":"DynamoDBOnDemandTableName","ParameterValue":"dynamodb-ondemand-monitoring"},
-    {"ParameterKey":"DynamoDBGlobalTableName","ParameterValue":"dynamodb-gt-monitoring"},
-    {"ParameterKey":"DynamoDBGlobalTableReceivingRegion","ParameterValue":"us-west-2"},
-    {"ParameterKey":"DynamoDBStreamLambdaFunctionName","ParameterValue":"FooDataForwardToKinesis"},
-    {"ParameterKey":"DynamoDBCustomNamespace","ParameterValue":"Custom_DynamoDB"}
-]
