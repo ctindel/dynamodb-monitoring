@@ -16,6 +16,13 @@ In practice you should modify these alarms to match your table and GSI configura
 
 A docker image file is included which allows you to easily deploy the samples into your own account without having to install any prerequisites besides the docker toolchain.
 
+### Lambda Function Environment Variables
+
+The lambda function accepts a number of environment variables for overriding default settings.  These are:
+
+* CLOUDWATCH_CUSTOM_NAMESPACE - By default the lambda function will publish metrics to the "Custom_DynamoDB" namespace.  If you'd like to change it, set the CLOUDWATCH_CUSTOM_NAMESPACE environment variable
+* DYNAMODB_ACCOUNT_TABLE_LIMIT - By default the lambda function will assume your DynamoDB Account Table Limit is 256.  There is no API call to determine your account table limit, so if you've asked AWS to increase this limit for your account you must set the DYNAMODB_ACCOUNT_TABLE_LIMIT to that value for the lambda function to calculate the AccountTableLimitPct custom metric properly.
+
 ### Installing
 
 All the following commands assume you've installed docker on your system and have exported the AWS environment variables.
