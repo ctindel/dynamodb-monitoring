@@ -37,7 +37,7 @@ Parameters:
     MinLength: 1
     MaxLength: 255
     ConstraintDescription : https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html
-  DynamoDBSNSEmail: 
+  DynamoDBSNSEmail:
     Description : Email Address subscribed to newly created SNS Topic
     Type: String
     AllowedPattern: "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
@@ -871,7 +871,7 @@ Resources:
       Threshold: 180000
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 60
-      EvaluationPeriods: 2
+      EvaluationPeriods: 15
 
 # Alarms for Lambda Functions
   DynamoStreamLambdaIteratorAgeAlarm:
@@ -892,4 +892,4 @@ Resources:
       Threshold: 30000
       ComparisonOperator: 'GreaterThanThreshold'
       Period: 60
-      EvaluationPeriods: 15
+      EvaluationPeriods: 2
