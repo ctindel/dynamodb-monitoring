@@ -51,7 +51,7 @@ Resources:
     Properties: 
       DisplayName: DynamoDB Monitoring SNS Topic
       Subscription: 
-        - Endpoint: ctindel@amazon.com
+        - Endpoint: !Ref DynamoDBSNSEmail
           Protocol: email
       TopicName: dynamodb-monitoring
   DynamoDBScalingRole: 
